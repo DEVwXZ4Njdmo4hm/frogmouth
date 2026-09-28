@@ -1,0 +1,13 @@
+# WHITE LIST
+
+# Ignore all first
+/*
+
+# KEEP
+!.gitignore
+!LICENSE
+!README.md
+!PKG-INFO
+!pyproject.toml
+
+!frogmouth/
