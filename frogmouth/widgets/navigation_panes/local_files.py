@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 from httpx import URL
 from textual.app import ComposeResult
@@ -35,8 +35,7 @@ class FilteredDirectoryTree(DirectoryTree):  # pylint:disable=too-many-ancestors
                 path
                 for path in paths
                 if not path.name.startswith(".")
-                and path.is_dir()
-                or (path.is_file() and maybe_markdown(path))
+                and (path.is_dir() or (path.is_file() and maybe_markdown(path)))
             ]
         except PermissionError:
             return []

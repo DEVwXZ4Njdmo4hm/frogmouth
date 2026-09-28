@@ -1,13 +1,13 @@
 """The main help dialog for the application."""
 
 import webbrowser
+from typing import Final
 
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Center, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Markdown
-from typing_extensions import Final
 
 from .. import __version__
 from ..utility.advertising import APPLICATION_TITLE
@@ -126,7 +126,7 @@ class HelpDialog(ModalScreen[None]):
         """Compose the help screen."""
         with Vertical():
             with VerticalScroll():
-                yield Markdown(HELP)
+                yield Markdown(HELP, open_links=False)
             with Center():
                 yield Button("Close", variant="primary")
 

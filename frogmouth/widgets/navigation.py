@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Self
 
 from textual.app import ComposeResult
 from textual.binding import Binding
@@ -10,7 +11,6 @@ from textual.containers import Vertical
 from textual.message import Message
 from textual.reactive import var
 from textual.widgets import TabbedContent, Tabs
-from typing_extensions import Self
 
 from ..data import load_config, save_config
 from .navigation_panes.bookmarks import Bookmarks
@@ -122,7 +122,7 @@ class Navigation(Vertical, can_focus=False, can_focus_children=True):
         if (
             self.popped_out
             and target is None
-            and self.query_one(Tabs).active == self._local_files.id
+            and self._tabs.active == self._local_files.id
         ):
             self.popped_out = False
         else:
@@ -138,7 +138,7 @@ class Navigation(Vertical, can_focus=False, can_focus_children=True):
         Returns:
             Self.
         """
-        if self.popped_out and self.query_one(Tabs).active == self._bookmarks.id:
+        if self.popped_out and self._tabs.active == self._bookmarks.id:
             self.popped_out = False
         else:
             self.popped_out = True
@@ -151,7 +151,7 @@ class Navigation(Vertical, can_focus=False, can_focus_children=True):
         Returns:
             Self.
         """
-        if self.popped_out and self.query_one(Tabs).active == self._history.id:
+        if self.popped_out and self._tabs.active == self._history.id:
             self.popped_out = False
         else:
             self.popped_out = True
@@ -164,7 +164,7 @@ class Navigation(Vertical, can_focus=False, can_focus_children=True):
         Returns:
             Self.
         """
-        if self.popped_out and self.query_one(Tabs).active == self._contents.id:
+        if self.popped_out and self._tabs.active == self._contents.id:
             self.popped_out = False
         else:
             self.popped_out = True
@@ -174,12 +174,12 @@ class Navigation(Vertical, can_focus=False, can_focus_children=True):
     def action_previous_tab(self) -> None:
         """Switch to the previous tab in the navigation pane."""
         self.query_one(Tabs).action_previous_tab()
-        self.focus_tab()
+        self.call_after_refresh(self.focus_tab)
 
     def action_next_tab(self) -> None:
         """Switch to the next tab in the navigation pane."""
         self.query_one(Tabs).action_next_tab()
-        self.focus_tab()
+        self.call_after_refresh(self.focus_tab)
 
     def action_toggle_dock(self) -> None:
         """Toggle the dock side for the navigation."""
@@ -190,7 +190,6 @@ class Navigation(Vertical, can_focus=False, can_focus_children=True):
 
     def focus_tab(self) -> None:
         """Focus the currently active tab."""
-        if active := self.query_one(Tabs).active:
-            self.query_one(
-                f"NavigationPane#{active}", NavigationPane
-            ).set_focus_within()
+        active_pane = self._tabs.active_pane
+        if isinstance(active_pane, NavigationPane):
+            active_pane.set_focus_within()

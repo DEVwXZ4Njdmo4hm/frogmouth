@@ -1,7 +1,8 @@
 """Provides a base class for all navigation panes."""
 
+from typing import Self
+
 from textual.widgets import TabbedContent, TabPane
-from typing_extensions import Self
 
 
 class NavigationPane(TabPane):

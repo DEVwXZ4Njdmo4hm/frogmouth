@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from collections import deque
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
+from typing import Final
 from webbrowser import open as open_url
 
 from httpx import URL, AsyncClient, HTTPStatusError, RequestError
@@ -15,7 +16,6 @@ from textual.containers import VerticalScroll
 from textual.message import Message
 from textual.reactive import var
 from textual.widgets import Markdown
-from typing_extensions import Final
 
 from .. import __version__
 from ..dialogs import ErrorDialog
@@ -41,11 +41,15 @@ class History:
         )
         """The list that holds the history of locations visited."""
         self._current: int = max(len(self._history) - 1, 0)
-        """The current location."""
+        """The current location, or the gap left by a deleted current entry."""
+        self._current_deleted = False
 
     @property
     def location(self) -> Path | URL | None:
         """The current location in the history."""
+        if self._current_deleted:
+            return None
+
         try:
             return self._history[self._current]
         except IndexError:
@@ -69,6 +73,7 @@ class History:
         """
         self._history.append(location)
         self._current = len(self._history) - 1
+        self._current_deleted = False
 
     def back(self) -> bool:
         """Go back in the history.
@@ -78,6 +83,7 @@ class History:
         """
         if self._current:
             self._current -= 1
+            self._current_deleted = False
             return True
         return False
 
@@ -87,14 +93,29 @@ class History:
         Returns:
             `True` if the location changed, `False` if not.
         """
+        if self._current_deleted:
+            if self._current < len(self._history):
+                self._current_deleted = False
+                return True
+            return False
+
         if self._current < len(self._history) - 1:
             self._current += 1
             return True
         return False
 
     def __delitem__(self, index: int) -> None:
+        if index < 0:
+            index += len(self._history)
+        if not 0 <= index < len(self._history):
+            raise IndexError("History index out of range")
+
         del self._history[index]
-        self._current = max(len(self._history) - 1, self._current)
+        if index < self._current:
+            self._current -= 1
+        elif index == self._current:
+            # Keep the gap so back and forward visit its immediate neighbours.
+            self._current_deleted = True
 
 
 class Viewer(VerticalScroll, can_focus=True, can_focus_children=True):
@@ -118,8 +139,8 @@ class Viewer(VerticalScroll, can_focus=True, can_focus_children=True):
     history: var[History] = var(History)
     """The browsing history."""
 
-    viewing_location: var[bool] = var(False)
-    """Is an actual location being viewed?"""
+    _viewed_location: var[Path | URL | None] = var(None)
+    """The loaded document location, independent of saved history."""
 
     class ViewerMessage(Message):
         """Base class for viewer messages."""
@@ -142,7 +163,7 @@ class Viewer(VerticalScroll, can_focus=True, can_focus_children=True):
 
     def compose(self) -> ComposeResult:
         """Compose the markdown viewer."""
-        yield Markdown(PLACEHOLDER)
+        yield Markdown(PLACEHOLDER, open_links=False)
 
     @property
     def document(self) -> Markdown:
@@ -152,7 +173,7 @@ class Viewer(VerticalScroll, can_focus=True, can_focus_children=True):
     @property
     def location(self) -> Path | URL | None:
         """The location that is currently being visited."""
-        return self.history.location if self.viewing_location else None
+        return self._viewed_location
 
     def scroll_to_block(self, block_id: str) -> None:
         """Scroll the document to the given block ID.
@@ -172,7 +193,7 @@ class Viewer(VerticalScroll, can_focus=True, can_focus_children=True):
         # We've loaded something fresh, ensure we're at the top.
         self.scroll_home(animate=False)
         # If we've made it in here we are viewing an actual location.
-        self.viewing_location = True
+        self._viewed_location = location
         # Remember the location in the history if we're supposed to.
         if remember:
             self.history.remember(location)
@@ -190,7 +211,7 @@ class Viewer(VerticalScroll, can_focus=True, can_focus_children=True):
         """
         try:
             await self.document.load(location)
-        except OSError as error:
+        except (OSError, UnicodeError) as error:
             self.app.push_screen(
                 ErrorDialog(
                     "Error loading local document",
@@ -239,13 +260,13 @@ class Viewer(VerticalScroll, can_focus=True, can_focus_children=True):
             content_type.startswith(f"text/{sub_type}")
             for sub_type in ("plain", "markdown", "x-markdown")
         ):
-            self.document.update(response.text)
-            self._post_load(location, remember)
+            await self.document.update(response.text)
+            self._post_load(response.url, remember)
         else:
             # Didn't look like something we could handle with the Markdown
             # viewer. We could throw up an error, or we could just be nice
             # to the user. Let's be nice...
-            open_url(str(location))
+            open_url(str(response.url))
 
     def visit(self, location: Path | URL, remember: bool = True) -> None:
         """Visit a location.
@@ -273,7 +294,7 @@ class Viewer(VerticalScroll, can_focus=True, can_focus_children=True):
         Args:
             content: The text to show.
         """
-        self.viewing_location = False
+        self._viewed_location = None
         self.document.update(content)
         self.scroll_home(animate=False)
 

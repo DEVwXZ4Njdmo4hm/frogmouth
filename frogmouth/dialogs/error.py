@@ -1,6 +1,6 @@
 """Provides an error dialog."""
 
-from textual.widgets._button import ButtonVariant
+from textual.widgets.button import ButtonVariant
 
 from .text_dialog import TextDialog
 

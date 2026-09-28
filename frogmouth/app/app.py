@@ -1,13 +1,13 @@
 """The main application class for the viewer."""
 
 from argparse import ArgumentParser, Namespace
+from importlib.metadata import version
 from webbrowser import open as open_url
 
-from textual import __version__ as textual_version  # pylint: disable=no-name-in-module
 from textual.app import App
 
 from .. import __version__
-from ..data import load_config
+from ..data import load_config, save_config
 from ..screens import Main
 from ..utility.advertising import APPLICATION_TITLE, PACKAGE_NAME
 
@@ -26,7 +26,7 @@ class MarkdownViewer(App[None]):
         """
         super().__init__()
         self._args = cli_args
-        self.dark = not load_config().light_mode
+        self.theme = "textual-light" if load_config().light_mode else "textual-dark"
 
     def on_mount(self) -> None:
         """Set up the application after the DOM is ready."""
@@ -39,6 +39,13 @@ class MarkdownViewer(App[None]):
             url: The URL to visit.
         """
         open_url(url)
+
+    def action_toggle_theme(self) -> None:
+        """Toggle and save the light/dark theme."""
+        config = load_config()
+        config.light_mode = not config.light_mode
+        save_config(config)
+        self.theme = "textual-light" if config.light_mode else "textual-dark"
 
 
 def get_args() -> Namespace:
@@ -61,7 +68,7 @@ def get_args() -> Namespace:
         "--version",
         help="Show version information.",
         action="version",
-        version=f"%(prog)s {__version__} (Textual v{textual_version})",
+        version=f"%(prog)s {__version__} (Textual v{version('textual')})",
     )
 
     # The remainder is the file to view.

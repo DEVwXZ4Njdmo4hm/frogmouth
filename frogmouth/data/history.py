@@ -42,7 +42,9 @@ def save_history(history: list[Path | URL]) -> None:
     Args:
         history: The history to save.
     """
-    history_file().write_text(dumps(history, indent=4, cls=HistoryEncoder))
+    history_file().write_text(
+        dumps(history, indent=4, cls=HistoryEncoder), encoding="utf-8"
+    )
 
 
 def load_history() -> list[Path | URL]:
@@ -54,7 +56,7 @@ def load_history() -> list[Path | URL]:
     return (
         [
             URL(location) if is_likely_url(location) else Path(location)
-            for location in loads(history.read_text())
+            for location in loads(history.read_text(encoding="utf-8"))
         ]
         if (history := history_file()).exists()
         else []

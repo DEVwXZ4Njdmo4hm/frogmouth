@@ -7,7 +7,12 @@
 !.gitignore
 !LICENSE
 !README.md
-!PKG-INFO
+!COMPATIBILITY.md
 !pyproject.toml
 
 !frogmouth/
+!uv.lock
+!tests/
+
+__pycache__/
+*.py[cod]

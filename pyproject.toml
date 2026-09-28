@@ -1,13 +1,12 @@
-[tool.poetry]
+[project]
 name = "frogmouth"
-homepage = "https://github.com/Textualize/frogmouth"
 version = "0.9.3"
 description = "A Markdown document viewer for the terminal - Capri Ported Version"
-authors = ["Capri XXI <qxwzj@hotmail.com>"]
+authors = [{name = "Capri XXI", email = "qxwzj@hotmail.com"}]
+maintainers = [{name = "Capri XXI", email = "qxwzj@hotmail.com"}]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "frogmouth"}]
-requires_python = ">=3.14"
+requires-python = ">=3.14,<4"
 classifiers = [
     "Environment :: Console",
     "Intended Audience :: Developers",
@@ -21,23 +20,67 @@ classifiers = [
     "Topic :: Text Processing :: Markup :: Markdown",
 ]
 
-[tool.poetry.dependencies]
-python = "^3.14"
-textual = "^0.43.0"
-typing-extensions = "^4.5.0"
-httpx = "^0.28.1"
-xdg = "^6.0.0"
+dependencies = [
+    "textual>=8.2.8,<9",
+    "httpx>=0.28.1,<0.29",
+    "xdg>=6,<7",
+]
 
+[project.urls]
+Upstream = "https://github.com/Textualize/frogmouth"
 
-[tool.poetry.group.dev.dependencies]
-textual-dev = "^1.1"
-mypy = "^1.1.1"
-pylint = "^2.17.1"
-pre-commit = "^3.2.1"
+[project.scripts]
+frogmouth = "frogmouth.app.app:run"
+
+[dependency-groups]
+dev = [
+    "textual-dev>=1.1,<2",
+    "mypy>=2.3.1,<3",
+    "pylint>=4,<5",
+    "ruff>=0.14,<1",
+    "pyright>=1.1.400,<2",
+    "pytest>=9,<10",
+    "pytest-asyncio>=1.3,<2",
+    "pre-commit>=4,<5",
+]
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=2.2,<3"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.poetry.scripts]
-frogmouth = "frogmouth.app.app:run"
+[tool.uv]
+# Mypyc wheels abort on CPython debug builds; use the pure Python checker.
+no-binary-package = ["mypy"]
+
+[tool.uv.extra-build-variables]
+mypy = { MYPY_USE_MYPYC = "0" }
+
+[tool.poetry]
+packages = [{include = "frogmouth"}]
+
+[tool.ruff]
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP", "B", "ASYNC"]
+
+[tool.mypy]
+python_version = "3.14"
+files = ["frogmouth"]
+check_untyped_defs = true
+disallow_untyped_defs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+
+[tool.pyright]
+include = ["frogmouth"]
+pythonVersion = "3.14"
+typeCheckingMode = "standard"
+venvPath = "."
+venv = ".venv"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = ["error"]

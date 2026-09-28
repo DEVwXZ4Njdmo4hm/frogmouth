@@ -1,6 +1,6 @@
 """Provides the 'branding' for the application."""
 
-from typing_extensions import Final
+from typing import Final
 
 from .. import __version__
 

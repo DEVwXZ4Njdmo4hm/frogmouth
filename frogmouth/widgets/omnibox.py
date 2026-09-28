@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 from re import compile as compile_regexp
-from typing import Type
 from webbrowser import open as open_url
 
 from httpx import URL
@@ -84,6 +83,7 @@ class Omnibox(Input):
             `True` if the string is a known command, `False` if not.
         """
         command, *_ = self._split_command(value)
+        command = command.lower()
         return (
             getattr(self, f"command_{self._ALIASES.get(command, command)}", None)
             is not None
@@ -96,6 +96,7 @@ class Omnibox(Input):
             command: The comment to execute.
         """
         command, arguments = self._split_command(command)
+        command = command.lower()
         getattr(self, f"command_{self._ALIASES.get(command, command)}")(
             arguments.strip()
         )
@@ -144,6 +145,9 @@ class Omnibox(Input):
 
         # Clean up whatever the user input.
         submitted = self.value.strip()
+        if not submitted:
+            event.stop()
+            return
 
         # Now that we've got it, empty the value. We'll put it back
         # depending on the outcome.
@@ -169,11 +173,11 @@ class Omnibox(Input):
                 # It's something that exists in the filesystem, but it's not
                 # a directory or a file. Let's nope on that for now.
                 return
-        elif self._is_command(command := submitted.lower()):
+        elif self._is_command(submitted):
             # Having checked for URLs and existing filesystem things, it's
             # now safe to look for commands. Having got here, it is a match
             # for a command so we handle it as such.
-            self._execute_command(command)
+            self._execute_command(submitted)
         else:
             # Having got this far, the best thing to do now is assume that
             # the user was attempting to enter a filename to view and got it
@@ -278,7 +282,7 @@ class Omnibox(Input):
             self.desired_file: str | None = desired_file
             """The optional file the user wants from the repository."""
 
-    def _forge_quick_look(self, command: Type[ForgeCommand], tail: str) -> None:
+    def _forge_quick_look(self, command: type[ForgeCommand], tail: str) -> None:
         """Core forge quick look support method.
 
         Args:

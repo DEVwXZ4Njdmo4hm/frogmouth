@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from functools import partial
 from pathlib import Path
-from typing import Awaitable, Callable
 from webbrowser import open as open_url
 
 from httpx import URL
@@ -16,7 +16,7 @@ from textual.screen import Screen
 from textual.widgets import Footer, Markdown
 
 from .. import __version__
-from ..data import load_config, load_history, save_config, save_history
+from ..data import load_history, save_history
 from ..dialogs import ErrorDialog, HelpDialog, InformationDialog, InputDialog
 from ..utility import (
     build_raw_bitbucket_url,
@@ -86,7 +86,7 @@ class Main(Screen[None]):  # pylint:disable=too-many-public-methods
         Binding("f2", "about", "About"),
         Binding("ctrl+n", "navigation", "Navigation"),
         Binding("ctrl+q", "app.quit", "Quit"),
-        Binding("f10", "toggle_theme", "", show=False),
+        Binding("f10", "app.toggle_theme", "", show=False),
     ]
     """The keyboard bindings for the main screen."""
 
@@ -246,8 +246,10 @@ class Main(Screen[None]):  # pylint:disable=too-many-public-methods
             self.app.push_screen(
                 ErrorDialog(
                     f"Unable to work out a {forge} URL",
-                    f"After trying a few options it hasn't been possible to work out the {forge} URL.\n\n"
-                    "Perhaps the file you're after is on an unusual branch, or the spelling is wrong?",
+                    f"After trying a few options it hasn't been possible to work out "
+                    f"the {forge} URL.\n\n"
+                    "Perhaps the file you're after is on an unusual branch, "
+                    "or the spelling is wrong?",
                 )
             )
 
@@ -403,7 +405,7 @@ class Main(Screen[None]):  # pylint:disable=too-many-public-methods
             self.visit(local_file)
         elif (
             isinstance(current_location, Path)
-            and (local_file := (current_location.parent / Path(event.href)))
+            and (local_file := current_location.parent / Path(event.href))
             .absolute()
             .exists()
         ):
@@ -500,14 +502,15 @@ class Main(Screen[None]):  # pylint:disable=too-many-public-methods
             )
         )
 
-    def add_bookmark(self, location: Path | URL, bookmark: str) -> None:
+    def add_bookmark(self, location: Path | URL, bookmark: str | None) -> None:
         """Handle adding the bookmark.
 
         Args:
             location: The location to bookmark.
             bookmark: The bookmark to add.
         """
-        self.query_one(Navigation).bookmarks.add_bookmark(bookmark, location)
+        if bookmark is not None:
+            self.query_one(Navigation).bookmarks.add_bookmark(bookmark, location)
 
     def action_bookmark_this(self) -> None:
         """Add a bookmark for the currently-viewed file."""
@@ -534,14 +537,6 @@ class Main(Screen[None]):  # pylint:disable=too-many-public-methods
             InputDialog("Bookmark title:", title),
             partial(self.add_bookmark, location),
         )
-
-    def action_toggle_theme(self) -> None:
-        """Toggle the light/dark mode theme."""
-        config = load_config()
-        config.light_mode = not config.light_mode
-        save_config(config)
-        # pylint:disable=attribute-defined-outside-init
-        self.app.dark = not config.light_mode
 
     def action_reload(self) -> None:
         """Reload the current document."""

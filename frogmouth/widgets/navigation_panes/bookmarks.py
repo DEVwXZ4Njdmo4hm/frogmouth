@@ -36,8 +36,9 @@ class Entry(Option):
         Returns:
             A prompt with icon, etc.
         """
+        icon = "page_facing_up" if isinstance(bookmark.location, Path) else "globe_with_meridians"
         return Text.from_markup(
-            f":{'page_facing_up' if isinstance(bookmark.location, Path) else 'globe_with_meridians'}: "
+            f":{icon}: "
             f"[bold]{bookmark.title}[/]\n[dim]{bookmark.location}[/]",
             overflow="ellipsis",
         )
@@ -130,7 +131,7 @@ class Bookmarks(NavigationPane):
         assert isinstance(event.option, Entry)
         self.post_message(self.Goto(event.option.bookmark))
 
-    def delete_bookmark(self, bookmark: int, delete_it: bool) -> None:
+    def delete_bookmark(self, bookmark: int, delete_it: bool | None) -> None:
         """Delete a given bookmark.
 
         Args:
@@ -152,13 +153,16 @@ class Bookmarks(NavigationPane):
                 partial(self.delete_bookmark, bookmark),
             )
 
-    def rename_bookmark(self, bookmark: int, new_name: str) -> None:
+    def rename_bookmark(self, bookmark: int, new_name: str | None) -> None:
         """Rename the current bookmark.
 
         Args:
             bookmark: The location of the bookmark to rename.
             new_name: The input dialog result that is the new name.
         """
+        if new_name is None:
+            return
+
         self._bookmarks[bookmark] = Bookmark(
             new_name, self._bookmarks[bookmark].location
         )

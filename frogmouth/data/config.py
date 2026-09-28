@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from functools import lru_cache
+from functools import cache
 from json import dumps, loads
 from pathlib import Path
 
@@ -54,13 +54,13 @@ def save_config(config: Config) -> Config:
     # Ensure any cached copy of the config is cleaned up.
     load_config.cache_clear()
     # Dump the given config to storage.
-    config_file().write_text(dumps(asdict(config), indent=4))
+    config_file().write_text(dumps(asdict(config), indent=4), encoding="utf-8")
     # Finally, load it up again. This is to make sure that the updated
     # version is in the cache.
     return load_config()
 
 
-@lru_cache(maxsize=None)
+@cache
 def load_config() -> Config:
     """Load the configuration from storage.
 
@@ -77,7 +77,7 @@ def load_config() -> Config:
     """
     source_file = config_file()
     return (
-        Config(**loads(source_file.read_text()))
+        Config(**loads(source_file.read_text(encoding="utf-8")))
         if source_file.exists()
         else save_config(Config())
     )

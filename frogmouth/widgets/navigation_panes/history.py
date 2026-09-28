@@ -141,7 +141,7 @@ class History(NavigationPane):
             self.history_id = history_id
             """The ID of the item of history to delete."""
 
-    def delete_history(self, history_id: int, delete_it: bool) -> None:
+    def delete_history(self, history_id: int, delete_it: bool | None) -> None:
         """Delete a given history entry.
 
         Args:
@@ -167,7 +167,7 @@ class History(NavigationPane):
     class Clear(Message):
         """Message that requests that the history be cleared."""
 
-    def clear_history(self, clear_it: bool) -> None:
+    def clear_history(self, clear_it: bool | None) -> None:
         """Perform a history clear.
 
         Args:

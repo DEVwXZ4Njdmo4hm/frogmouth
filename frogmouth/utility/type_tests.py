@@ -4,7 +4,7 @@ from functools import singledispatch
 from pathlib import Path
 from typing import Any
 
-from httpx import URL
+from httpx import URL, InvalidURL
 
 from ..data.config import load_config
 
@@ -48,5 +48,9 @@ def is_likely_url(candidate: str) -> bool:
         `True` if the string is likely a URL, `False` if not.
     """
     # Quick and dirty for now.
-    url = URL(candidate)
+    try:
+        url = URL(candidate)
+    except InvalidURL:
+        return False
+
     return url.is_absolute_url and url.scheme in ("http", "https")

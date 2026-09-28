@@ -51,7 +51,9 @@ def save_bookmarks(bookmarks: list[Bookmark]) -> None:
     Args:
         bookmarks: The bookmarks to save.
     """
-    bookmarks_file().write_text(dumps(bookmarks, indent=4, cls=BookmarkEncoder))
+    bookmarks_file().write_text(
+        dumps(bookmarks, indent=4, cls=BookmarkEncoder), encoding="utf-8"
+    )
 
 
 def load_bookmarks() -> list[Bookmark]:
@@ -65,7 +67,7 @@ def load_bookmarks() -> list[Bookmark]:
             Bookmark(
                 title, URL(location) if is_likely_url(location) else Path(location)
             )
-            for (title, location) in loads(bookmarks.read_text())
+            for (title, location) in loads(bookmarks.read_text(encoding="utf-8"))
         ]
         if (bookmarks := bookmarks_file()).exists()
         else []

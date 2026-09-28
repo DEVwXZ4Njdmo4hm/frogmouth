@@ -173,7 +173,7 @@ async def build_raw_codeberg_url(
     target.
     """
     return await build_raw_forge_url(
-        "https://codeberg.org/{owner}/{repository}/raw//branch/{branch}/{file}",
+        "https://codeberg.org/{owner}/{repository}/raw/branch/{branch}/{file}",
         owner,
         repository,
         branch,
